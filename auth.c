@@ -11,6 +11,7 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 	char ibuf[IBUF_SIZE];
 	int i;
 	int row, col;
+	int trow, tcol;
 
 	// Get screen dimensions for printing
 	getmaxyx(stdscr,row,col);
@@ -27,9 +28,13 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 		switch (msg[i]->msg_style) {
 			case PAM_PROMPT_ECHO_OFF:
 				noecho();
-				move((row/2)+1,(col-strlen(msg[i]->msg))/2);
+				move((row/2)+1,(col-strlen(msg[i]->msg))/2-8);
 				printw(msg[i]->msg);
+				// Get input, suppress line break
+				getyx(stdscr,trow,tcol);
 				getstr(ibuf);
+				move(trow,tcol);
+				refresh();
 				pam_resp[i].resp = strdup(ibuf);
 				echo();
 				if (pam_resp[i].resp == NULL)
@@ -39,7 +44,7 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 				memset(ibuf,0,IBUF_SIZE);
 			case PAM_PROMPT_ECHO_ON:
 				printw(msg[i]->msg);
-				if (fgets(buffer, sizeof buffer, stdin) == NULL)
+				if (getstr(buffer) == ERR)
 					goto failed_conv;
 				pam_resp[i].resp = strdup(buffer);
 				if (pam_resp[i].resp == NULL)
@@ -49,13 +54,13 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 				fputs(msg[i]->msg, stderr);
 				if (strlen(msg[i]->msg) > 0 &&
 				    msg[i]->msg[strlen(msg[i]->msg) - 1] != '\n')
-					fputc('\n', stderr);
+					printw("\n");
 				break;
 			case PAM_TEXT_INFO:
 				printw(msg[i]->msg);
 				if (strlen(msg[i]->msg) > 0 &&
 				    msg[i]->msg[strlen(msg[i]->msg) - 1] != '\n')
-					fputc('\n', stdout);
+					printw("\n");
 				break;
 			default:
 				goto failed_conv;
