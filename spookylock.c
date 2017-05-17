@@ -37,6 +37,7 @@ int main(){
 	
 	flag = 0;
 	attempts = 0;
+	// Loop until the user is authenticated
 	while(flag == FLAG_NOT_AUTH){
 		// Get screen dimensions
 		getmaxyx(stdscr, row, col);
@@ -62,7 +63,6 @@ int main(){
 			exit(0);
 		}else{
 			// Warn the user if they haven't been authenticated
-			// There should be a loop here FIXME
 			mvprintw(row-1,col-(strlen(errormsg)),errormsg);
 			refresh();
 			sleep(1);
