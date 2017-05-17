@@ -16,23 +16,28 @@ int main(){
 	pam_handle_t* pamh = NULL;
 	int ret;
 	int row, col;
+	// Get $USER
 	char* user = getenv("USER");
 	const char* msg = "This workstation is locked\n";
 
+	// Ignore requests to exit
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 
+	// Set up ncurses screen
 	initscr();
-	//cbreak();
 	raw();
 	keypad(stdscr, TRUE);
 	getmaxyx(stdscr, row, col);
+	// Move to center and print info for the user
 	move(row/2, (col-(strlen(msg)))/2);
 	printw(msg);
 
+	// Start pam conversation
 	ret = pam_start("check_user", getenv("USER"), &pconv, &pamh);
 	
+	// Check if conversation was successful (user has authenticated)
 	if(ret == PAM_SUCCESS){
 		ret = pam_authenticate(pamh, 0);
 	}
@@ -44,6 +49,8 @@ int main(){
 		endwin();
 		exit(0);
 	}else{
+		// Warn the user if they haven't been authenticated
+		// There should be a loop here FIXME
 		printw("Not authenticated\n");
 		getch();
 	}
@@ -53,7 +60,7 @@ int main(){
 		endwin();
 		exit(1);
 	}
-	//getch();
+	// Close ncurses screen and window
 	endwin();
 	return ( ret = PAM_SUCCESS ? 0:1);
 }

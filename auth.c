@@ -12,12 +12,14 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 	int i;
 	int row, col;
 
+	// Get screen dimensions for printing
 	getmaxyx(stdscr,row,col);
 	if (num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG)
 		return (PAM_CONV_ERR);
 	if ((pam_resp = calloc(num_msg, sizeof *pam_resp)) == NULL)
 		return (PAM_BUF_ERR);
 	
+	// Meet PAM conversation function spec
 	for (i = 0; i < num_msg; ++i) {
 		pam_resp[i].resp_retcode = 0;
 		pam_resp[i].resp = NULL;
@@ -33,6 +35,7 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 				if (pam_resp[i].resp == NULL)
 					goto failed_conv;
 				break;
+				// Zero the memory that had the password
 				memset(ibuf,0,IBUF_SIZE);
 			case PAM_PROMPT_ECHO_ON:
 				printw(msg[i]->msg);
@@ -68,6 +71,7 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
                         free(pam_resp[i].resp);
                 }
         }
+		// Zero the memory that (might have) had the password
         memset(pam_resp, 0, num_msg * sizeof *pam_resp);
 	*resp = NULL;
 	return (PAM_CONV_ERR);
