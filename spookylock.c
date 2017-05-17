@@ -8,6 +8,8 @@
 #include "auth.h"
 
 #define USER_BUF_SIZE 33
+#define FLAG_NOT_AUTH 0
+#define FLAG_AUTH 1
 
 int main(){
 	static struct pam_conv pconv;
@@ -19,6 +21,9 @@ int main(){
 	// Get $USER
 	char* user = getenv("USER");
 	const char* msg = "This workstation is locked\n";
+	const char* errormsg = "Error: Not authenticated!\n";
+	int flag;
+	int attempts;
 
 	// Ignore requests to exit
 	signal(SIGINT, SIG_IGN);
@@ -27,32 +32,45 @@ int main(){
 
 	// Set up ncurses screen
 	initscr();
-	raw();
+	cbreak();
 	keypad(stdscr, TRUE);
-	getmaxyx(stdscr, row, col);
-	// Move to center and print info for the user
-	move(row/2, (col-(strlen(msg)))/2);
-	printw(msg);
-
-	// Start pam conversation
-	ret = pam_start("check_user", getenv("USER"), &pconv, &pamh);
 	
-	// Check if conversation was successful (user has authenticated)
-	if(ret == PAM_SUCCESS){
-		ret = pam_authenticate(pamh, 0);
-	}
-	if(ret == PAM_SUCCESS){
-		ret = pam_acct_mgmt(pamh, 0);
-	}
-	if(ret == PAM_SUCCESS){
-		//printw("Authenticated\n");
-		endwin();
-		exit(0);
-	}else{
-		// Warn the user if they haven't been authenticated
-		// There should be a loop here FIXME
-		printw("Not authenticated\n");
-		getch();
+	flag = 0;
+	attempts = 0;
+	while(flag == FLAG_NOT_AUTH){
+		// Get screen dimensions
+		getmaxyx(stdscr, row, col);
+		// Move to center and print info for the user
+		move(row/2, (col-(strlen(msg)))/2);
+		printw(msg);
+
+		// Start pam conversation
+		ret = pam_start("check_user", getenv("USER"), &pconv, &pamh);
+		
+		// Check if conversation was successful (user has authenticated)
+		if(ret == PAM_SUCCESS){
+			ret = pam_authenticate(pamh, 0);
+		}
+		if(ret == PAM_SUCCESS){
+			ret = pam_acct_mgmt(pamh, 0);
+		}
+		if(ret == PAM_SUCCESS){
+			//printw("Authenticated\n");
+			// Flag as authenticated, do not loop (future)
+			flag = FLAG_AUTH;
+			endwin();
+			exit(0);
+		}else{
+			// Warn the user if they haven't been authenticated
+			// There should be a loop here FIXME
+			mvprintw(row-1,col-(strlen(errormsg)),errormsg);
+			refresh();
+			sleep(1);
+			clear();
+			// Reset flag (future)
+			flag = FLAG_NOT_AUTH;
+			attempts++;
+		}
 	}
 
 	if (pam_end(pamh,ret) != PAM_SUCCESS){
