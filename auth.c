@@ -13,7 +13,6 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 	int row, col;
 
 	getmaxyx(stdscr,row,col);
-	//data = data;
 	if (num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG)
 		return (PAM_CONV_ERR);
 	if ((pam_resp = calloc(num_msg, sizeof *pam_resp)) == NULL)
@@ -36,7 +35,6 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 				break;
 				memset(ibuf,0,IBUF_SIZE);
 			case PAM_PROMPT_ECHO_ON:
-				//fputs(msg[i]->msg, stderr);
 				printw(msg[i]->msg);
 				if (fgets(buffer, sizeof buffer, stdin) == NULL)
 					goto failed_conv;
@@ -51,7 +49,6 @@ int ncurses_conv(int num_msg, const struct pam_message **msg, struct pam_respons
 					fputc('\n', stderr);
 				break;
 			case PAM_TEXT_INFO:
-				//fputs(msg[i]->msg, stdout);
 				printw(msg[i]->msg);
 				if (strlen(msg[i]->msg) > 0 &&
 				    msg[i]->msg[strlen(msg[i]->msg) - 1] != '\n')
